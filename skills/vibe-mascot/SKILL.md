@@ -52,6 +52,12 @@ So the SVG must:
 6. Stay under 131,072 characters (the pane's hard limit). 20-35 KB is normal.
 7. Set its own drawn size with `width`/`height` on the root, a whole multiple
    of the grid: 20 cells at 80 px, 32 cells at 128 px (4 px per cell).
+8. Stay inside what the terminal pane can read (MASCOTS.md, "In the
+   terminal"): it redraws the SVG as half-block cells itself, so motion is
+   `steps(1)` translates in whole px and opacity blinks; rotation, scaling
+   and easing show only as the resting pose there. The kit's builders
+   already write that subset. Over 20 pixels tall, the terminal draws the
+   mascot at half size.
 
 The mood comes from how the track feels, which Haiku judges once per track
 whatever its genre: aggressive (angry, loud, distorted, shouted; grunge can
@@ -190,8 +196,9 @@ character mascot shows a gloomy face in silence instead of sleeping).
    `/soundtrack pane` is enough: the pane re-reads the file on every open.
 
 12. **Check it live**: ask the user to open the pane while music plays and
-    confirm the motion. If nothing moves at all, see "Frozen mascot" in
-    LESSONS.md before touching the art.
+    confirm the motion, in the desktop app and, if they use one, a terminal
+    session. If nothing moves at all, see "Frozen mascot" in LESSONS.md
+    before touching the art.
 
 ## Files in this skill
 

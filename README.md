@@ -62,17 +62,22 @@ new session where you want it.
   transcript notices, which the model never reads.
 - `/soundtrack pane` opens a live timeline pane in a retro pixel look. At
   the top, Bop the pixel mascot (or [your own](#your-own-mascot)) dances to
-  the current vibe beside a pixel equalizer: it headbangs to aggressive music of any genre, sways to
-  calm music, bounces to the rest and sleeps through silence (Haiku judges
-  how each track feels, once). Below it, the tracks are listed
-  newest first, each on a node in its vibe's color, with the files edited
-  while it played. The current track is marked ▶, and the pane redraws as
-  tracks change and edits land.
+  the current vibe beside a pixel equalizer: it headbangs to aggressive
+  music of any genre, sways to calm music, bounces to the rest and sleeps
+  through silence (Haiku judges how each track feels, once). Below it, the
+  tracks are listed newest first, each on a node in its vibe's color, with
+  the files edited while it played. The current track is marked ▶, and the
+  pane redraws as tracks change and edits land.
+- In a terminal session the pane draws the mascot, the name and the
+  equalizer in colored half-block characters, two pixels a cell, dancing
+  the same steps. It needs a terminal with true color (Windows Terminal
+  has it). A mascot taller than 10 rows there is drawn at half size.
 
-Bop stands still when your system asks for reduced motion (on Windows:
-Settings → Accessibility → Visual effects → Animation effects off). To keep
-him dancing anyway, set the plugin's `motion` option to `always`: in `/config`
-in a terminal session, or in `~/.claude/settings.json`:
+In the desktop app, Bop stands still when your system asks for reduced
+motion (on Windows: Settings → Accessibility → Visual effects → Animation
+effects off). A terminal can't tell, so there he always dances. To keep him
+dancing in the desktop app too, set the plugin's `motion` option to
+`always`: in `/config` in a terminal session, or in `~/.claude/settings.json`:
 
 ```json
 "pluginConfigs": { "b-side@b-side": { "options": { "motion": "always" } } }

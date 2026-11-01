@@ -1,6 +1,6 @@
 {
   "name": "b-side",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Logs what music is playing while you code and which files you edited during each track.",
   "author": { "name": "cheeseburgerhere", "url": "https://github.com/cheeseburgerhere" },
   "repository": "https://github.com/cheeseburgerhere/b-side",

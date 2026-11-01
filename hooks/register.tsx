@@ -1,4 +1,5 @@
 import type { EngineInterface, Register } from 'claude-code'
+import { cellSize, cells, frame, parseMascot, type Mascot as Pixels, type Picture } from './pixels'
 
 // A side channel only: nothing here is sent to the model's context or
 // changes a prompt. Polling, labeling and file writes run on timers; the
@@ -404,7 +405,8 @@ function moodOf(known: Label | undefined, isPlaying: boolean): Mood {
 }
 // Seconds per beat for each mood until the BPM is known.
 const BEAT: Record<Mood, number> = { 'm-bounce': 0.5, 'm-sway': 0.75, 'm-bang': 0.35, 'm-sleep': 0.5 }
-// What the terminal, which draws no SVG, shows in the mascot's place.
+// What the terminal, which draws no SVG, shows for a mascot it can't turn
+// into pixels.
 const KAOMOJI: Record<Mood, string> = {
   'm-bounce': '♪ ┏(・o・)┛ ♪',
   'm-sway': '~(˘▾˘~) ♫',
@@ -412,7 +414,8 @@ const KAOMOJI: Record<Mood, string> = {
   'm-sleep': '(－_－) zzZ',
 }
 
-let mascot: { source: string; alt: string; width: number; height: number } | null = null
+// `pixels`: the same mascot for the terminal's Raster, when it is pixel art.
+let mascot: { source: string; alt: string; width: number; height: number; pixels: Pixels | null } | null = null
 let mascotName = 'bop'
 // The `motion` option: true keeps the mascot dancing under reduced motion.
 let isAlwaysMoving = false
@@ -435,6 +438,7 @@ async function loadMascot($: $, name: string) {
         alt: source.match(/<title>([^<]*)<\/title>/)?.[1] ?? 'B-side mascot',
         width: size('width'),
         height: size('height'),
+        pixels: parseMascot(source),
       }
       return
     } catch {
@@ -537,6 +541,100 @@ function wordmark(mood: Mood, isPlaying: boolean) {
 // read there, is lifted.
 const NAVY = '#253D5B'
 const readable = (color: string) => (color === NAVY ? '#5A7BA3' : color)
+
+// The terminal's header in pixels, two a cell: the mascot, the name and the
+// equalizer as Rasters, repainted whenever a step of their animation changes
+// the picture. The timer stops when the pane is gone.
+const DANCE_MS = 50
+// The tallest the mascot is drawn, in rows: bigger ones are drawn at half
+// size (or less), each block of pixels as one.
+const MASCOT_ROWS = 10
+const hex = (color: string) => Number.parseInt(color.slice(1), 16)
+// The dance's clock: timer ticks, so a test's clock moves it too.
+let danceTicks = 0
+let dance = { mood: 'm-sleep' as Mood, color: '', isPlaying: false }
+// What each Raster last showed, by key.
+const shown = new Map<string, string>()
+let danceTimer: { cancel: () => void } | null = null
+// Refused repaints in a row: the Rasters may not be mounted yet, so only a
+// second of refusals means the pane is gone.
+let danceMisses = 0
+
+const shrinkFor = (pixels: Pixels) => {
+  let k = 1
+  while (cellSize(pixels, k).rows > MASCOT_ROWS) k++
+  return k
+}
+
+// The name as in wordmark(): banded letters, one hopping a beat while music plays.
+function namePicture(t: number, beat: number, isPlaying: boolean): Picture {
+  const height = 8 // a row of room above for the hop
+  const pixels = new Map<number, number>()
+  let x = 0
+  ;[...NAME].forEach((ch, i) => {
+    const glyph = GLYPHS[ch] ?? []
+    const lift = isPlaying && Math.floor(t / beat) % NAME.length === i ? 0 : 1
+    glyph.forEach((row, y) =>
+      [...row].forEach((on, dx) => {
+        if (on === '1') pixels.set((y + lift) * NAME_WIDTH + x + dx, hex(BANDS[y] ?? QUIET))
+      }),
+    )
+    x += (glyph[0]?.length ?? 0) + 1
+  })
+  return { width: NAME_WIDTH, height, pixels }
+}
+
+// The equalizer as in equalizer(): a bar every other column, as wide as the
+// name, each stepping through its heights a beat at a time; low in silence.
+const TERM_EQ_HEIGHT = 6
+function eqPicture(t: number, beat: number, isPlaying: boolean, color: string): Picture {
+  const pixels = new Map<number, number>()
+  const paint = isPlaying ? hex(readable(color)) : hex(QUIET)
+  for (let i = 0; 2 * i < NAME_WIDTH; i++) {
+    const steps = EQ_STEPS[(i * 3) % 4] ?? [1]
+    const h = isPlaying ? (steps[(Math.floor(t / beat) + (i % 3)) % steps.length] ?? 1) : 1
+    for (let y = TERM_EQ_HEIGHT - h; y < TERM_EQ_HEIGHT; y++) pixels.set(y * NAME_WIDTH + 2 * i, paint)
+  }
+  return { width: NAME_WIDTH, height: TERM_EQ_HEIGHT, pixels }
+}
+
+// Each Raster of the header now: key, size and cells.
+function terminalArt() {
+  const t = (danceTicks * DANCE_MS) / 1000
+  const { mood, color, isPlaying } = dance
+  const beat = BEAT[mood]
+  const art: { key: string; columns: number; rows: number; cells: string }[] = []
+  const pixels = mascot?.pixels
+  if (pixels) {
+    const k = shrinkFor(pixels)
+    art.push({ key: 'mascot', ...cellSize(pixels, k), cells: frame(pixels, mood, beat, hex(color), t, k) })
+  }
+  const asCells = (key: string, p: Picture) => art.push({ key, columns: p.width, rows: Math.ceil(p.height / 2), cells: cells(p) })
+  asCells('name', namePicture(t, beat, isPlaying))
+  asCells('eq', eqPicture(t, beat, isPlaying, color))
+  return art
+}
+
+function stopDance() {
+  danceTimer?.cancel()
+  danceTimer = null
+}
+
+async function danceStep($: $) {
+  danceTicks++
+  let isRefused = false
+  for (const { key, columns, rows, cells } of terminalArt()) {
+    if (shown.get(key) === cells) continue
+    const res = await $.ui.blit({ requestId: PANE, key, columns, rows, cells })
+    if (res.deny) isRefused = true
+    else shown.set(key, cells)
+  }
+  if (!isRefused) danceMisses = 0
+  else if (++danceMisses * DANCE_MS >= 1000) {
+    danceMisses = 0
+    stopDance()
+  }
+}
 
 async function allReport($: $): Promise<string[]> {
   const entries = await $.fs.list(dir)
@@ -679,8 +777,8 @@ export const register: Register = (on, options) => {
   // The timeline in a pixel-LCD look: the mascot dancing to what plays now
   // beside a pixel equalizer, then the tracks newest first on a line of
   // square nodes in each vibe's color, with the files edited while each
-  // played. The terminal, which draws no SVG, gets a kaomoji and a text
-  // equalizer.
+  // played. The terminal, which draws no SVG, gets the mascot as a Raster
+  // (or a kaomoji) and a text equalizer.
   on('ui.render', { component: 'Pane', requestId: PANE }, ($, e) => {
     const els = $.ui.resolve(e)
     const { Box, Text } = els
@@ -698,8 +796,23 @@ export const register: Register = (on, options) => {
     // The terminal's table carries an Svg that draws nothing. Each Svg gets
     // its own size: without one, Desktop stretches it to the room it has.
     const Svg = !isTerminal && 'Svg' in els ? els.Svg : undefined
+    const Raster = isTerminal && 'Raster' in els ? els.Raster : undefined
+    const art = new Map<string, ReturnType<typeof terminalArt>[number]>()
+    if (Raster) {
+      dance = { mood, color: nowColor, isPlaying: playing !== null }
+      for (const a of terminalArt()) {
+        art.set(a.key, a)
+        shown.set(a.key, a.cells)
+      }
+      danceTimer ??= $.clock.every(DANCE_MS, () => void danceStep($))
+    }
+    const raster = (key: string) => {
+      const a = art.get(key)
+      return Raster && a ? <Raster key={key} columns={a.columns} rows={a.rows} cells={a.cells} /> : undefined
+    }
     const dancer =
-      Svg && mascot ? (
+      raster('mascot') ??
+      (Svg && mascot ? (
         <Svg
           source={dressed(mascot.source, mood, nowColor)}
           alt={mascot.alt}
@@ -711,8 +824,8 @@ export const register: Register = (on, options) => {
         <Text mono color={nowColor}>
           {KAOMOJI[mood]}
         </Text>
-      )
-    const eq = Svg ? (
+      ))
+    const eq = raster('eq') ?? (Svg ? (
       <Svg
         source={equalizer(mood, nowColor, playing !== null)}
         alt="equalizer"
@@ -724,7 +837,7 @@ export const register: Register = (on, options) => {
       <Text mono color={playing ? nowColor : QUIET}>
         {playing ? EQ_TEXT : '▁'.repeat(EQ_TEXT.length)}
       </Text>
-    )
+    ))
 
     const last = blocks.length - 1
     const nowKey = playing ? keyOf(playing) : null
@@ -735,7 +848,7 @@ export const register: Register = (on, options) => {
         <Box flexDirection="row" gap={2} alignItems="stretch">
           {dancer}
           <Box flexDirection="column" flexShrink={1} justifyContent="space-between">
-            {Svg ? (
+            {raster('name') ?? (Svg ? (
               <Svg
                 source={wordmark(mood, playing !== null)}
                 alt="B-side"
@@ -747,7 +860,7 @@ export const register: Register = (on, options) => {
               <Text mono weight="bold" color={BANDS[0]}>
                 {NAME}
               </Text>
-            )}
+            ))}
             {eq}
             <Text mono color={playing ? readable(nowColor) : QUIET} wrap="truncate-end">
               {playing ? `▶ ${playing.title}` : 'silence'}

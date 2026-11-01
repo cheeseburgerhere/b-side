@@ -11,7 +11,12 @@ A mascot is one animated SVG file. The mod shows it at the top of the
 `/soundtrack pane` and tells it how to dance: which **mood**, how fast (the
 **beat**) and in what **color** (the current vibe's). The built-in one, Bop,
 is a 20×20 pixel sprite; `mascots/bop.svg` is a working example of everything
-below. The terminal can't draw SVG, so it shows a kaomoji in the mascot's place.
+below.
+
+The terminal can't draw SVG, so there the mod reads the mascot's pixels
+itself and draws them in half-block characters, two pixels a cell. It
+understands what a pixel mascot is made of (see "In the terminal" below);
+anything else gets a kaomoji in the mascot's place.
 
 ## Where it goes
 
@@ -75,6 +80,25 @@ whatever the genre (grunge can be aggressive, a metal ballad calm):
 
 `m-bang` is the intense mood, not a required headbang: show whatever
 intensity suits the mascot.
+
+## In the terminal
+
+The terminal pane reads the SVG and redraws it as cells, so it understands
+a subset of SVG and CSS, which the `vibe-mascot` kit writes:
+
+- `<rect x y width height>` cells inside nested `<g class="...">` groups, in a
+  square `viewBox="0 0 N N"`;
+- fills from rules naming one class: `.hair{fill:#C0C0D0}` or
+  `.band{fill:var(--vibe,#7F77DD)}`;
+- showing and hiding with `opacity` rules, for every mood (`.zz{opacity:0}`)
+  or one (`.m-sleep .zz{opacity:1}`);
+- animations with `steps(1)` and `infinite` whose keyframes move whole cells
+  (`translateX`, `translateY`, `translate` in px) or blink (`opacity`), their
+  times in seconds or `var(--beat)`, optionally `calc(var(--beat) * 2)` or `/ 2`.
+
+Rotation, scaling and smooth easing are drawn as the resting pose. A mascot
+taller than 10 rows (20 pixels) is drawn at half size or less, each block of
+pixels as its most common color.
 
 ## Rules
 

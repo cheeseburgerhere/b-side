@@ -205,6 +205,17 @@ only when the mascot has hair, and that is where most attempts went wrong.
 - Why: the terminal's element table includes an `Svg` that draws nothing.
 - Fix: check `e.surface !== 'terminal'` (done in the pane's code).
 
+### A terminal mascot that filled the pane
+- Seen: "mascot takes so much space": a 32×32 mascot drawn two pixels a
+  cell is 32 columns by 16 rows, most of a terminal side pane.
+- Why: a terminal cell holds at most two square pixels (`▀` with a text and
+  a background color), so the only way to make it smaller is fewer pixels.
+- Fix: the terminal caps the mascot at 10 rows and shrinks taller ones by
+  whole factors, each block as its most common color (the darker on a tie,
+  so outlines and eyes survive). Halved, a 32×32 character keeps its
+  silhouette and colors; fine hair strands get busy. The user liked the
+  result's own charm: don't chase more detail there.
+
 ## Characters with hair
 
 ### What worked
