@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mascot studio</title>
+<style>
+body{margin:0;padding:24px;background:#1e1e1d;color:#c9c7c0;font:13px ui-monospace,Consolas,monospace}
+h1{font-size:14px;font-weight:normal;margin:0 0 16px}
+a{color:#8FA8E8}
+.row{display:flex;flex-wrap:wrap;gap:20px}
+figure{margin:0;padding:12px;background:#2a2928;border:1px solid #3a3937}
+iframe{width:256px;height:256px;border:0;display:block}
+figcaption{margin-top:8px;text-align:center}
+.vibes{margin:0 0 16px;display:flex;gap:8px;align-items:center}
+.vibes button{width:22px;height:22px;border:2px solid #555;cursor:pointer}
+</style>
+</head>
+<body>
+<h1><span id="name">mascot</span> · all moods (animations forced on, as with motion: always) · <a href="editor.html">pixel editor</a></h1>
+<div class="vibes" id="vibes">vibe color:</div>
+<div class="row" id="row"></div>
+<script>
+// Each mood in its own iframe, as in the pane: an inline SVG's <style> is
+// page-global, so side by side one copy's mood rules would leak into another.
+const MOODS = [["m-bounce", ".5s", "bounce · most music"], ["m-sway", ".75s", "sway · chill / lo-fi"],
+               ["m-bang", ".35s", "bang · heavy"], ["m-sleep", ".5s", "sleep · silence"]];
+const SWATCHES = ["#8FA8E8", "#ED93B1", "#E24B4A", "#5DCAA5", "#FAC775", "#AFA9EC"];
+let vibe = SWATCHES[0];
+
+function vibeAll(c) {
+  vibe = c;
+  for (const f of document.querySelectorAll("iframe")) {
+    const svg = f.contentDocument && f.contentDocument.querySelector("svg");
+    if (svg) svg.style.setProperty("--vibe", c);
+  }
+}
+
+async function show() {
+  const info = await (await fetch("/api/info")).json();
+  document.getElementById("name").textContent = info.name;
+  document.title = `${info.name} · mascot studio`;
+  const svg = await (await fetch("/api/working")).text();
+  const row = document.getElementById("row");
+  row.innerHTML = "";
+  for (const [cls, beat, label] of MOODS) {
+    const fig = document.createElement("figure"), f = document.createElement("iframe");
+    f.scrolling = "no";
+    f.srcdoc = "<style>html,body{margin:0;background:transparent;overflow:hidden}svg{width:256px;height:256px;display:block}</style>" +
+      svg.replace("<svg ", `<svg class="${cls} motion-always" style="--beat:${beat};--vibe:${vibe}" `);
+    fig.append(f, Object.assign(document.createElement("figcaption"), { textContent: label }));
+    row.append(fig);
+  }
+}
+
+for (const c of SWATCHES) {
+  const b = document.createElement("button");
+  b.style.background = c; b.onclick = () => vibeAll(c);
+  document.getElementById("vibes").append(b);
+}
+show();
+</script>
+</body>
+</html>

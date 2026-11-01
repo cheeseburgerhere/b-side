@@ -1,0 +1,20 @@
+<svg viewBox="0 0 20 20" width="80" height="80" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><title>Bop, the B-side mascot</title><style>.band,.zz{fill:var(--vibe,#7F77DD)}
+.cup{fill:#534AB7}.skin{fill:#FAD7C8}.blush{fill:#ED93B1}.mouth,.eye{fill:#26215C}
+.shine{fill:#FFFFFF}.shirt{fill:#AFA9EC}.leg{fill:#5F5E5A}.note{fill:var(--vibe,#7F77DD)}
+.bang,.shut,.zz{opacity:0}
+.m-bounce .rig{animation:hop var(--beat,.5s) steps(1) infinite}
+.m-bounce .note,.m-sway .note{animation:float calc(var(--beat,.5s)*2) steps(1) infinite}
+.m-sway .rig{animation:sway calc(var(--beat,.75s)*2) steps(1) infinite}
+.m-bang .rig{animation:hop var(--beat,.35s) steps(1) infinite}
+.m-bang .head{animation:bang calc(var(--beat,.35s)/2) steps(1) infinite}
+.m-bang .open,.m-sleep .open{opacity:0}
+.m-bang .bang{opacity:1}
+.m-bang .note,.m-sleep .note{opacity:0}
+.m-sleep .shut,.m-sleep .zz{opacity:1}
+.m-sleep .rig{animation:hop 3.6s steps(1) infinite}
+.m-sleep .zz{animation:float 2.4s steps(1) infinite}
+@keyframes hop{50%{transform:translateY(-1px)}}
+@keyframes sway{0%{transform:translateX(-1px)}50%{transform:translateX(1px)}}
+@keyframes bang{50%{transform:translateY(1px)}}
+@keyframes float{50%{transform:translateY(-1px)}}
+@media (prefers-reduced-motion:reduce){svg:not(.motion-always) *{animation:none!important}}</style><g class="rig"><g class="head"><g class="band"><rect x="7" y="3" width="6" height="1"/><rect x="5" y="4" width="2" height="1"/><rect x="13" y="4" width="2" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="15" y="5" width="1" height="1"/></g><g class="cup"><rect x="3" y="6" width="2" height="1"/><rect x="15" y="6" width="2" height="1"/><rect x="3" y="7" width="2" height="1"/><rect x="15" y="7" width="2" height="1"/><rect x="3" y="8" width="2" height="1"/><rect x="15" y="8" width="2" height="1"/><rect x="3" y="9" width="2" height="1"/><rect x="15" y="9" width="2" height="1"/></g><g class="skin"><rect x="7" y="5" width="6" height="1"/><rect x="6" y="6" width="8" height="1"/><rect x="5" y="7" width="10" height="1"/><rect x="5" y="8" width="10" height="1"/><rect x="5" y="9" width="10" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="6" y="10" width="8" height="1"/><rect x="15" y="10" width="1" height="1"/><rect x="5" y="11" width="4" height="1"/><rect x="11" y="11" width="4" height="1"/><rect x="6" y="12" width="8" height="1"/></g><g class="blush"><rect x="5" y="10" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/></g><g class="mouth"><rect x="9" y="11" width="2" height="1"/></g><g class="open"><g class="eye"><rect x="8" y="8" width="1" height="1"/><rect x="12" y="8" width="1" height="1"/><rect x="7" y="9" width="2" height="1"/><rect x="11" y="9" width="2" height="1"/></g><g class="shine"><rect x="7" y="8" width="1" height="1"/><rect x="11" y="8" width="1" height="1"/></g></g><g class="bang"><g class="eye"><rect x="7" y="8" width="1" height="1"/><rect x="12" y="8" width="1" height="1"/><rect x="8" y="9" width="1" height="1"/><rect x="11" y="9" width="1" height="1"/><rect x="7" y="10" width="1" height="1"/><rect x="12" y="10" width="1" height="1"/></g></g><g class="shut"><g class="eye"><rect x="7" y="9" width="2" height="1"/><rect x="11" y="9" width="2" height="1"/></g></g></g><g class="shirt"><rect x="5" y="13" width="10" height="1"/><rect x="4" y="14" width="1" height="1"/><rect x="6" y="14" width="8" height="1"/><rect x="15" y="14" width="1" height="1"/><rect x="6" y="15" width="8" height="1"/></g><g class="leg"><rect x="6" y="16" width="2" height="1"/><rect x="12" y="16" width="2" height="1"/><rect x="6" y="17" width="2" height="1"/><rect x="12" y="17" width="2" height="1"/></g></g><g class="note"><rect x="3" y="3" width="2" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="1" y="6" width="2" height="1"/></g><g class="zz"><rect x="15" y="1" width="3" height="1"/><rect x="16" y="2" width="1" height="1"/><rect x="15" y="3" width="3" height="1"/></g><g class="zz small"><rect x="18" y="4" width="2" height="1"/><rect x="18" y="5" width="2" height="1"/></g></svg>

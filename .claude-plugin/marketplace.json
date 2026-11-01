@@ -1,0 +1,6 @@
+{
+  "name": "b-side",
+  "owner": { "name": "cheeseburgerhere" },
+  "description": "B-side: the music you code to, with a retro pixel timeline pane",
+  "plugins": [{ "name": "b-side", "source": "./" }]
+}

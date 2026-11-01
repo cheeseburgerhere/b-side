@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pixel editor</title>
+<style>
+:root{--bg:#1e1e1d;--panel:#2a2928;--line:#3a3937;--text:#c9c7c0;--dim:#8d8b84;--accent:#8FA8E8}
+*{box-sizing:border-box}
+body{margin:0;padding:20px 24px;background:var(--bg);color:var(--text);font:13px ui-monospace,Consolas,monospace}
+h1{font-size:14px;font-weight:normal;margin:0 0 14px}
+a{color:var(--accent)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+button,select{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--dim)}
+button.on{border-color:var(--accent);color:#fff}
+button.primary{background:#34406b;border-color:var(--accent);color:#fff}
+.main{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+canvas{display:block;width:min(577px,calc(100vw - 50px));height:auto;background:var(--panel);border:1px solid var(--line);cursor:crosshair;image-rendering:pixelated}
+.side{display:flex;flex-direction:column;gap:14px;min-width:260px;max-width:340px}
+.box{background:var(--panel);border:1px solid var(--line);padding:10px}
+.box h2{font-size:12px;font-weight:normal;color:var(--dim);margin:0 0 8px;text-transform:uppercase;letter-spacing:.05em}
+.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px}
+.sw{display:flex;align-items:center;gap:6px;padding:3px 4px;border:1px solid transparent;cursor:pointer;white-space:nowrap;overflow:hidden}
+.sw i{width:16px;height:16px;flex:none;border:1px solid #0008}
+.sw.on{border-color:var(--accent);background:#ffffff0d}
+#status{min-height:3.2em;line-height:1.6}
+#msg{color:var(--accent);min-height:1.6em}
+iframe{width:128px;height:128px;border:0;display:block}
+.hint{color:var(--dim);line-height:1.6}
+kbd{border:1px solid var(--line);padding:0 4px;font:inherit}
+</style>
+</head>
+<body>
+<h1><span id="name">mascot</span> · pixel editor · <a href="index.html">all moods</a></h1>
+
+<div class="bar" id="moods"></div>
+<div class="bar">
+  <button id="t-paint" class="on" title="B">paint</button>
+  <button id="t-erase" title="E">erase</button>
+  <button id="t-pick" title="I (or Alt+click)">pick color</button>
+  <span style="width:10px"></span>
+  part:
+  <select id="layer"></select>
+  <span style="width:10px"></span>
+  <button id="undo" title="Ctrl+Z">undo</button>
+  <button id="grid" class="on">grid</button>
+  <button id="marks" class="on">mark edits</button>
+  <span style="width:10px"></span>
+  <button id="save" class="primary">save + rebuild</button>
+  <button id="revert">drop unsaved</button>
+  <button id="clear">clear all edits</button>
+</div>
+
+<div class="main">
+  <canvas id="cv" width="577" height="577"></canvas>
+  <div class="side">
+    <div class="box"><h2>under the cursor</h2><div id="status">—</div><div id="msg"></div></div>
+    <div class="box"><h2>color</h2><div class="palette" id="palette"></div></div>
+    <div class="box"><h2>saved, animated</h2><iframe id="live"></iframe></div>
+    <div class="box hint">
+      Pixels belong to parts (hair, a face, a hat…), so an edit moves with its part.
+      A part shown in several moods changes in all of them (see <i>shown in</i>);
+      faces and effects usually belong to one mood.<br>
+      <b>part: auto</b> paints into the top part under the cursor, or the nearest one on an empty cell.
+      Erase removes the pixel from that part, showing what is behind.<br>
+      <kbd>B</kbd> paint · <kbd>E</kbd> erase · <kbd>I</kbd> or <kbd>Alt</kbd>+click pick · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>S</kbd> save
+    </div>
+  </div>
+</div>
+
+<script>
+const N = 32, Z = 18;
+const MOODS = [["m-bounce", "bounce", ".5s"], ["m-sway", "sway", ".75s"], ["m-bang", "bang", ".35s"], ["m-sleep", "sleep", ".5s"]];
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+cv.width = cv.height = N * Z + 1;
+
+let info = { name: "mascot" }, base = "", fills = {}, keyOrder = [], baseCells = {}, visible = {}, edits = {}, saved = "{}";
+let mood = "m-bounce", tool = "paint", color = null, showGrid = true, showMarks = true;
+let undoStack = [], painting = false, hover = null;
+
+const $ = id => document.getElementById(id);
+const say = t => { $("msg").textContent = t; };
+const dirty = () => JSON.stringify(edits) !== saved;
+
+function frameDoc(svg, cls, still) {
+  const kill = still ? "*{animation:none!important;transition:none!important}" : "";
+  return `<style>html,body{margin:0;background:transparent;overflow:hidden}svg{width:128px;height:128px;display:block}${kill}</style>` +
+    svg.replace("<svg ", `<svg class="${cls} motion-always" style="--beat:${MOODS.find(m => m[0] === cls)[2]};--vibe:#8FA8E8" `);
+}
+
+// Containers are <g>s that hold rects directly; their key is the owning part's
+// class plus frame classes (s1, s2…), exactly as pixel_overrides.py reads them.
+function containerKey(g) {
+  const classes = (g.getAttribute("class") || "").split(/\s+/).filter(Boolean);
+  const col = classes.find(c => c in fills) || null;
+  const frame = classes.filter(c => !(c in fills)).sort().join(" ");
+  const owner = g.parentNode.getAttribute("class") || "";
+  return { key: owner + (frame ? "|" + frame : ""), col };
+}
+const containersOf = doc => [...doc.querySelectorAll("g")].filter(g => g.querySelector(":scope > rect"));
+
+function loadFrame(cls) {
+  return new Promise(resolve => {
+    const f = document.createElement("iframe");
+    f.style.cssText = "position:absolute;left:-9999px;top:0;width:200px;height:200px";
+    f.onload = () => resolve(f);
+    f.srcdoc = frameDoc(base, cls, true);
+    document.body.appendChild(f);
+  });
+}
+
+async function load() {
+  say("loading…");
+  info = await (await fetch("/api/info", { cache: "no-store" })).json();
+  $("name").textContent = info.name; document.title = `${info.name} · pixel editor`;
+  base = await (await fetch("/api/base", { cache: "no-store" })).text();
+  edits = await (await fetch("/api/overrides", { cache: "no-store" })).json();
+  saved = JSON.stringify(edits);
+  undoStack = [];
+  fills = {};
+  const style = base.match(/<style>([\s\S]*?)<\/style>/)[1];
+  for (const m of style.matchAll(/([.\w,-]+)\{fill:(?:var\(--vibe,)?(#[0-9A-Fa-f]{6})/g))
+    for (const c of m[1].split(",")) fills[c.replace(".", "")] = m[2];
+  keyOrder = []; baseCells = {}; visible = {};
+  for (const [cls] of MOODS) {
+    const f = await loadFrame(cls);
+    const doc = f.contentDocument, vis = new Set();
+    for (const g of containersOf(doc)) {
+      const { key, col } = containerKey(g);
+      if (!(key in baseCells)) { baseCells[key] = {}; keyOrder.push(key); }
+      if (cls === MOODS[0][0])
+        for (const r of g.querySelectorAll(":scope > rect")) {
+          const x = +r.getAttribute("x"), y = +r.getAttribute("y"), w = +r.getAttribute("width");
+          for (let i = 0; i < w; i++) baseCells[key][`${x + i},${y}`] = col;
+        }
+      let shown = true;
+      for (let el = g; el && el.nodeType === 1; el = el.parentNode)
+        if (doc.defaultView.getComputedStyle(el).opacity === "0") { shown = false; break; }
+      if (shown) vis.add(key);
+    }
+    visible[cls] = vis;
+    f.remove();
+  }
+  if (!color || !(color in fills)) color = Object.keys(fills).sort()[0];
+  buildPalette(); buildLayers(); refreshLive(); draw();
+  say(dirty() ? "" : "loaded");
+}
+
+const cellOf = (key, xy) => (edits[key] && xy in edits[key]) ? edits[key][xy] : (baseCells[key][xy] || null);
+
+function topAt(x, y, m = mood) {
+  const xy = `${x},${y}`;
+  for (let i = keyOrder.length - 1; i >= 0; i--) {
+    const key = keyOrder[i];
+    if (!visible[m].has(key)) continue;
+    const c = cellOf(key, xy);
+    if (c) return { key, cls: c };
+  }
+  return null;
+}
+
+function nearestKey(x, y) {
+  for (let r = 1; r <= 3; r++)
+    for (let dy = -r; dy <= r; dy++)
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const t = topAt(x + dx, y + dy);
+        if (t) return t.key;
+      }
+  return null;
+}
+
+function setEdit(key, xy, val) {
+  const baseVal = baseCells[key][xy] || null;
+  edits[key] = edits[key] || {};
+  if (val === baseVal) delete edits[key][xy]; else edits[key][xy] = val;
+  if (!Object.keys(edits[key]).length) delete edits[key];
+}
+
+function draw() {
+  ctx.fillStyle = "#2a2928"; ctx.fillRect(0, 0, cv.width, cv.height);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const t = topAt(x, y);
+    if (t) { ctx.fillStyle = fills[t.cls] || "#f0f"; ctx.fillRect(x * Z + 1, y * Z + 1, Z, Z); }
+  }
+  if (showGrid) {
+    ctx.strokeStyle = "#ffffff14"; ctx.lineWidth = 1; ctx.beginPath();
+    for (let i = 0; i <= N; i++) { ctx.moveTo(i * Z + .5, 0); ctx.lineTo(i * Z + .5, N * Z + 1); ctx.moveTo(0, i * Z + .5); ctx.lineTo(N * Z + 1, i * Z + .5); }
+    ctx.stroke();
+  }
+  if (showMarks) {
+    ctx.fillStyle = "#ff3b8b";
+    for (const key in edits) {
+      if (!visible[mood].has(key)) continue;
+      for (const xy in edits[key]) {
+        const [x, y] = xy.split(",").map(Number);
+        if (y < N) ctx.fillRect(x * Z + Z / 2 - 1, y * Z + Z / 2 - 1, 4, 4);
+      }
+    }
+  }
+  if (hover) {
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.strokeRect(hover.x * Z + 2, hover.y * Z + 2, Z - 2, Z - 2);
+  }
+  $("save").textContent = dirty() ? "save + rebuild •" : "save + rebuild";
+}
+
+function status(x, y) {
+  const t = topAt(x, y);
+  if (!t) { $("status").innerHTML = `${x},${y} · empty`; return; }
+  const shownIn = MOODS.filter(([c]) => visible[c].has(t.key)).map(m => m[1]).join(", ");
+  $("status").innerHTML = `${x},${y} · <b>${t.cls}</b><br>part <b>${t.key}</b><br>shown in: ${shownIn}`;
+}
+
+function apply(x, y) {
+  if (x < 0 || y < 0 || x >= N || y >= N) return;
+  const xy = `${x},${y}`, chosen = $("layer").value;
+  if (tool === "pick") {
+    const t = topAt(x, y);
+    if (t) { color = t.cls; buildPalette(); setTool("paint"); say(`picked ${t.cls}`); }
+    return;
+  }
+  let key = chosen !== "auto" ? chosen : (topAt(x, y) || {}).key;
+  if (tool === "paint" && !key) key = nearestKey(x, y);
+  if (!key) { say("no part here: pick one in the part list"); return; }
+  if (tool === "erase") {
+    if (!cellOf(key, xy)) return;
+    setEdit(key, xy, null);
+  } else {
+    if (cellOf(key, xy) === color) return;
+    setEdit(key, xy, color);
+  }
+  draw();
+}
+
+function buildPalette() {
+  const p = $("palette"); p.innerHTML = "";
+  for (const [cls, hex] of Object.entries(fills).sort()) {
+    const d = document.createElement("div");
+    d.className = "sw" + (cls === color ? " on" : "");
+    d.innerHTML = `<i style="background:${hex}"></i>${cls}`;
+    d.onclick = () => { color = cls; setTool("paint"); buildPalette(); };
+    p.appendChild(d);
+  }
+}
+
+function buildLayers() {
+  const s = $("layer"), keep = s.value;
+  s.innerHTML = `<option value="auto">auto (top part)</option>` +
+    keyOrder.filter(k => visible[mood].has(k)).map(k => `<option>${k}</option>`).join("");
+  s.value = [...s.options].some(o => o.value === keep) ? keep : "auto";
+}
+
+function buildMoods() {
+  $("moods").innerHTML = "";
+  for (const [cls, label] of MOODS) {
+    const b = document.createElement("button");
+    b.textContent = label; b.className = cls === mood ? "on" : "";
+    b.onclick = () => { mood = cls; buildMoods(); buildLayers(); refreshLive(); draw(); };
+    $("moods").appendChild(b);
+  }
+}
+
+async function refreshLive() {
+  const svg = await (await fetch("/api/working", { cache: "no-store" })).text();
+  $("live").srcdoc = frameDoc(svg, mood, false);
+}
+
+function setTool(t) {
+  tool = t;
+  for (const n of ["paint", "erase", "pick"]) $("t-" + n).classList.toggle("on", n === t);
+}
+
+function snapshot() { undoStack.push(JSON.stringify(edits)); if (undoStack.length > 200) undoStack.shift(); }
+function undo() { if (undoStack.length) { edits = JSON.parse(undoStack.pop()); draw(); say("undone"); } }
+
+async function save() {
+  say("saving and rebuilding…");
+  const r = await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json", "X-Mascot-Studio": "1" }, body: JSON.stringify(edits) });
+  const body = await r.json();
+  if (!r.ok) { say("save failed: " + (body.error || r.status)); return; }
+  saved = JSON.stringify(edits);
+  await refreshLive(); draw();
+  say(`saved ${body.pixels} edited pixels; ${info.name}.svg is rebuilt`);
+}
+
+const cellAt = e => {
+  const b = cv.getBoundingClientRect(), k = cv.width / b.width;  // the canvas is CSS-scaled to fit
+  return { x: Math.floor(((e.clientX - b.left) * k - 1) / Z), y: Math.floor(((e.clientY - b.top) * k - 1) / Z) };
+};
+cv.addEventListener("mousedown", e => {
+  const { x, y } = cellAt(e);
+  if (e.altKey) { const t = topAt(x, y); if (t) { color = t.cls; buildPalette(); say(`picked ${t.cls}`); } return; }
+  if (tool !== "pick") snapshot();
+  painting = tool !== "pick"; apply(x, y);
+});
+cv.addEventListener("mousemove", e => {
+  const { x, y } = cellAt(e);
+  if (!hover || hover.x !== x || hover.y !== y) {
+    hover = { x, y }; status(x, y);
+    if (painting) apply(x, y); else draw();
+  }
+});
+window.addEventListener("mouseup", () => { painting = false; });
+cv.addEventListener("mouseleave", () => { hover = null; draw(); });
+
+$("t-paint").onclick = () => setTool("paint");
+$("t-erase").onclick = () => setTool("erase");
+$("t-pick").onclick = () => setTool("pick");
+$("undo").onclick = undo;
+$("grid").onclick = () => { showGrid = !showGrid; $("grid").classList.toggle("on", showGrid); draw(); };
+$("marks").onclick = () => { showMarks = !showMarks; $("marks").classList.toggle("on", showMarks); draw(); };
+$("save").onclick = save;
+$("revert").onclick = () => { if (!dirty() || confirm("Drop the edits you haven't saved?")) load(); };
+$("clear").onclick = () => { if (confirm("Remove every hand edit? (Save afterwards to rebuild without them.)")) { snapshot(); edits = {}; draw(); say("all edits cleared; save to apply"); } };
+$("layer").onchange = () => say("");
+window.addEventListener("keydown", e => {
+  if (e.target.tagName === "SELECT") return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+  else if (e.key === "b") setTool("paint");
+  else if (e.key === "e") setTool("erase");
+  else if (e.key === "i") setTool("pick");
+});
+window.addEventListener("beforeunload", e => { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
+
+buildMoods(); setTool("paint"); load();
+</script>
+</body>
+</html>
