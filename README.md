@@ -7,6 +7,8 @@ added to Claude's context and no prompt is changed.
 It runs on Windows 10 or 11 only: it reads the Windows media session with
 Windows PowerShell 5.1, which ships with Windows.
 
+<img src="docs/pane.gif" alt="The B-side pane: Bop the pixel mascot dancing beside a pixel equalizer, then the tracks played this session, newest first, each with its vibe and the files edited while it played" width="491">
+
 ## Install
 
 At the prompt of a Claude Code terminal session:
@@ -25,6 +27,16 @@ claude plugin install b-side --marketplace cheeseburgerhere/b-side
 In the desktop app, where `/plugin` does not run: click + next to the prompt
 box, then Plugins, Add marketplace with `cheeseburgerhere/b-side`, then Add
 plugin.
+
+Logging and the status line start on their own. **The pane doesn't**: to see
+it, run this in a session:
+
+```
+/soundtrack pane
+```
+
+It opens beside the chat and stays live while you work. Run it again in each
+new session where you want it.
 
 ## What it does
 
