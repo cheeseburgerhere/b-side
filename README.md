@@ -7,7 +7,7 @@ added to Claude's context and no prompt is changed.
 It runs on Windows 10 or 11 only: it reads the Windows media session with
 Windows PowerShell 5.1, which ships with Windows.
 
-<img src="docs/pane.gif" alt="The B-side pane: Bop the pixel mascot dancing beside a pixel equalizer, then the tracks played this session, newest first, each with its vibe and the files edited while it played" width="491">
+<img src="docs/pane.gif" alt="The B-side pane: Miso the pixel cat dancing beside a pixel equalizer, then the tracks played this session, newest first, each with its vibe and the files edited while it played" width="662">
 
 ## Install
 
@@ -61,8 +61,8 @@ new session where you want it.
   vibes you code to most across all sessions. The output is printed as
   transcript notices, which the model never reads.
 - `/soundtrack pane` opens a live timeline pane in a retro pixel look. At
-  the top, Bop the pixel mascot (or [your own](#your-own-mascot)) dances to
-  the current vibe beside a pixel equalizer: it headbangs to aggressive
+  the top, Miso the pixel cat (or [another mascot](#your-own-mascot)) dances
+  to the current vibe beside a pixel equalizer: it headbangs to aggressive
   music of any genre, sways to calm music, bounces to the rest and sleeps
   through silence (Haiku judges how each track feels, once). Below it, the
   tracks are listed newest first, each on a node in its vibe's color, with
@@ -73,10 +73,10 @@ new session where you want it.
   the same steps. It needs a terminal with true color (Windows Terminal
   has it). A mascot taller than 10 rows there is drawn at half size.
 
-In the desktop app, Bop stands still when your system asks for reduced
-motion (on Windows: Settings → Accessibility → Visual effects → Animation
-effects off). A terminal can't tell, so there he always dances. To keep him
-dancing in the desktop app too, set the plugin's `motion` option to
+In the desktop app, the mascot stands still when your system asks for
+reduced motion (on Windows: Settings → Accessibility → Visual effects →
+Animation effects off). A terminal can't tell, so there it always dances. To
+keep it dancing in the desktop app too, set the plugin's `motion` option to
 `always`: in `/config` in a terminal session, or in `~/.claude/settings.json`:
 
 ```json
@@ -87,8 +87,10 @@ dancing in the desktop app too, set the plugin's `motion` option to
 
 ## Your own mascot
 
-Bop can be swapped for any mascot you like: a character, a pet, an object, a
-creature. Each one dances in four moods, picked from how the music feels.
+Miso can be swapped for any mascot you like: a character, a pet, an object,
+a creature. Each one dances in four moods, picked from how the music feels.
+The plugin also ships Bop, a smaller 20×20 blob kid: set the `mascot` option
+(below) to `bop`.
 
 **Ask Claude for one.** The plugin ships a mascot skill,
 [`vibe-mascot`](skills/vibe-mascot/SKILL.md), that Claude uses when you ask,
@@ -115,7 +117,7 @@ this folder. Select one with the `mascot` option (the name without `.svg`):
 ```
 
 then run `/reload-plugins`. After editing the SVG itself, reopening
-`/soundtrack pane` is enough. A missing or broken file falls back to Bop.
+`/soundtrack pane` is enough. A missing or broken file falls back to Miso.
 
 To draw one by hand instead, [MASCOTS.md](MASCOTS.md) has the full contract:
 the four moods, the CSS variables the pane sets, the rules and a starter

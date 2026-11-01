@@ -9,9 +9,10 @@ says what to expect. This file is the contract for drawing one by hand.
 
 A mascot is one animated SVG file. The mod shows it at the top of the
 `/soundtrack pane` and tells it how to dance: which **mood**, how fast (the
-**beat**) and in what **color** (the current vibe's). The built-in one, Bop,
-is a 20×20 pixel sprite; `mascots/bop.svg` is a working example of everything
-below.
+**beat**) and in what **color** (the current vibe's). Two ship with the
+plugin, and both are working examples of everything below: the default,
+Miso, a 32×32 cat in headphones (`mascots/miso.svg`, built by the skill's
+`example_mascot.py`), and Bop, a 20×20 blob kid (`mascots/bop.svg`).
 
 The terminal can't draw SVG, so there the mod reads the mascot's pixels
 itself and draws them in half-block characters, two pixels a cell. It
@@ -27,7 +28,7 @@ anything else gets a kaomoji in the mascot's place.
 ```
 
 Plugin updates leave this folder alone. The pane looks there first, then in
-the plugin's own `mascots/` folder, which holds the built-in `bop.svg`.
+the plugin's own `mascots/` folder, which holds `miso.svg` and `bop.svg`.
 
 Pick it with the plugin's `mascot` option (the file name without `.svg`), in
 `/config` or in `~/.claude/settings.json`:
@@ -38,15 +39,15 @@ Pick it with the plugin's `mascot` option (the file name without `.svg`), in
 
 The mascot file is read again each time you run `/soundtrack pane`, so after
 editing it, reopen the pane. After changing the `mascot` option itself, run
-`/reload-plugins`. An unknown or broken file falls back to the built-in mascot.
+`/reload-plugins`. An unknown or broken file falls back to Miso.
 
 ## The contract
 
 **Canvas.** Any square `viewBox`. The root's `width` and `height` set the drawn
 size: `<svg viewBox="0 0 32 32" width="128" height="128" xmlns="http://www.w3.org/2000/svg">`.
 For pixel art, add `shape-rendering="crispEdges"` and keep the size a whole
-multiple of the grid (Bop: 20 cells at 80 px; the Miso example: 32 cells at
-128 px, 4 px per cell for both). Stay between about 64 and 160 px.
+multiple of the grid (Miso: 32 cells at 128 px; Bop: 20 cells at 80 px,
+4 px per cell for both). Stay between about 64 and 160 px.
 
 **Leave the root's `class` and `style` empty.** The mod sets them on every redraw:
 

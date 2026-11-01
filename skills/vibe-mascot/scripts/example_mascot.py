@@ -162,7 +162,7 @@ head = (
     + "</g>"
 )
 body = speed + '<g class="rig">' + s.group("tail") + s.group("body") + head + "</g>" + effects
-svg = s.svg(body, STYLE, title="Miso, the example mascot", size=128)
+svg = s.svg(body, STYLE, title="Miso, the B-side mascot", size=128)
 # Hand edits from the studio's pixel editor (studio/server.py) go on last, so
 # rebuilding never loses them. Name the file after the mascot's SVG.
 svg = apply_overrides(svg, os.path.join(os.path.dirname(os.path.abspath(__file__)), "miso_overrides.json"))

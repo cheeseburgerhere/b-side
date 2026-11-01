@@ -1,6 +1,7 @@
-# Only the built-in mascot ships; mascots you add stay on your machine.
+# Only the built-in mascots ship; mascots you add stay on your machine.
 mascots/*
 !mascots/bop.svg
+!mascots/miso.svg
 
 __pycache__/
 *_overrides.json

@@ -183,7 +183,7 @@ character mascot shows a gloomy face in silence instead of sleeping).
 
 11. **Install it** for the user: the file is already in
    `~/.claude/vibe/mascots/` (the pane looks there first, then in the
-   plugin's own `mascots/`, then falls back to Bop), and the plugin option
+   plugin's own `mascots/`, then falls back to Miso), and the plugin option
    `mascot` names it (without `.svg`). In the Desktop app,
    where `/config` is unavailable, that is `~/.claude/settings.json`:
    ```json
@@ -206,8 +206,8 @@ character mascot shows a gloomy face in silence instead of sleeping).
 | ----------------------------- | -------------------------------------------------------------- |
 | `LESSONS.md`                  | What worked and what didn't, with causes and fixes. Read first. |
 | `scripts/pixelkit.py`         | Shapes (rect, ellipse, polygon, path, line), parts, shading, per-part outlines, SVG output. |
-| `scripts/example_mascot.py`   | Miso: an original 32×32 cat in headphones; the template to copy. |
-| `scripts/example_charmap.py`  | Bop: the built-in 20×20 mascot from character maps.            |
+| `scripts/example_mascot.py`   | Miso: the default 32×32 cat in headphones (`mascots/miso.svg`); the template to copy. Rebuild that SVG after editing it. |
+| `scripts/example_charmap.py`  | Bop: the other shipped mascot, 20×20, from character maps.     |
 | `scripts/preview.py`          | PNG sheet of all four moods, standard library only.           |
 | `scripts/pixel_overrides.py`  | Applies hand edits to a finished SVG; builders call it last.   |
 | `scripts/studio/`             | `server.py` + `site/`: all moods animating, and a pixel editor, for any mascot. Local only. |

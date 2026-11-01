@@ -416,17 +416,17 @@ const KAOMOJI: Record<Mood, string> = {
 
 // `pixels`: the same mascot for the terminal's Raster, when it is pixel art.
 let mascot: { source: string; alt: string; width: number; height: number; pixels: Pixels | null } | null = null
-let mascotName = 'bop'
+let mascotName = 'miso'
 // The `motion` option: true keeps the mascot dancing under reduced motion.
 let isAlwaysMoving = false
 
 // Reads <name>.svg from the user's mascots folder, which plugin updates leave
-// alone, then from the plugin's own, falling back to the built-in one.
+// alone, then from the plugin's own, falling back to the default, Miso.
 async function loadMascot($: $, name: string) {
   const home = await $.env.get('USERPROFILE')
   const own = `${$.plugin.root}\\mascots`
   const paths = /^[a-z0-9-]+$/.test(name) ? [...(home ? [`${home}\\.claude\\vibe\\mascots`] : []), own].map(d => `${d}\\${name}.svg`) : []
-  for (const path of [...paths, `${own}\\bop.svg`]) {
+  for (const path of [...paths, `${own}\\miso.svg`]) {
     try {
       const source = (await $.fs.read(path)).trim()
       if (!source.startsWith('<svg') || source.length > 131_072) continue
@@ -693,7 +693,7 @@ function print($: $, lines: string[]) {
 export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     try {
-      mascotName = String(options.mascot ?? 'bop')
+      mascotName = String(options.mascot ?? 'miso')
       await loadMascot($, mascotName)
       isAlwaysMoving = options.motion === 'always'
       await openSession($)
@@ -870,8 +870,11 @@ export const register: Register = (on, options) => {
             </Text>
           </Box>
         </Box>
-        <Text mono dimColor wrap="truncate-end">
-          {'─'.repeat(e.props.bodyColumns)}
+        {/* Desktop fits a little less than bodyColumns and neither clips
+            nor cuts cleanly (a cut ends in "…", an overflow wraps), so
+            there the line is drawn a bit short. */}
+        <Text mono dimColor>
+          {'─'.repeat(isTerminal ? e.props.bodyColumns : Math.max(0, e.props.bodyColumns - Math.ceil(e.props.bodyColumns / 16) - 1))}
         </Text>
         {blocks.length === 0 && (
           <Text mono dimColor>
