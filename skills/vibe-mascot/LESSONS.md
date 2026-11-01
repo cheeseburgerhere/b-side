@@ -136,6 +136,17 @@ only when the mascot has hair, and that is where most attempts went wrong.
 - Fix: every class a builder paints needs a CSS fill. A part missing from
   the preview sheet means a missing fill.
 
+### A part named like a color
+- Seen: a wizard's sleep hat came out as a hollow outline, and before that
+  a hat moved down for sleep looked mangled.
+- Why: the hat's part group and its color class were both `hat`. A rule
+  meant for the part, `.m-sleep .hat{opacity:0}` or `{transform:...}`,
+  also matched every `<g class="hat">` color group, so it hid or moved the
+  grey pixels of other parts too (and moved the hat's own pixels twice).
+- Fix: give parts names no color class uses (`hat-on` for the part, `hat`
+  for the color). Before writing a `.m-<mood> .x` rule, check that `x` is
+  not also a fill class.
+
 ### An edge color that swallowed the shape
 - Seen: a guitar body came out almost entirely in its light edge color.
 - Why: edge detection recolored cells while iterating the same dict, so a
