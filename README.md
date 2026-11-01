@@ -89,8 +89,7 @@ keep it dancing in the desktop app too, set the plugin's `motion` option to
 
 Miso can be swapped for any mascot you like: a character, a pet, an object,
 a creature. Each one dances in four moods, picked from how the music feels.
-The plugin also ships Bop, a smaller 20×20 blob kid: set the `mascot` option
-(below) to `bop`.
+The plugin also ships Bop, a smaller 20×20 blob kid: switch to `bop` (below).
 
 **Ask Claude for one.** The plugin ships a mascot skill,
 [`vibe-mascot`](skills/vibe-mascot/SKILL.md), that Claude uses when you ask,
@@ -110,14 +109,23 @@ The kit, preview and studio need Python 3 (standard library only).
 
 **Where mascots live.** `%USERPROFILE%\.claude\vibe\mascots\<name>.svg`, with
 a name of lowercase letters, digits and hyphens. Plugin updates don't touch
-this folder. Select one with the `mascot` option (the name without `.svg`):
+this folder.
 
-```json
-"pluginConfigs": { "b-side@b-side": { "options": { "mascot": "sleepy-fox" } } }
-```
+**Switching mascots.** The plugin's `mascot` option names the mascot to show:
+`miso` (the default), `bop`, or one of yours, by its file name without `.svg`.
+Set it any of these ways:
 
-then run `/reload-plugins`. After editing the SVG itself, reopening
-`/soundtrack pane` is enough. A missing or broken file falls back to Miso.
+- ask Claude: "switch my B-side mascot to bop";
+- in a terminal session, `/config`, then the B-side plugin's Mascot option;
+- or by hand, in `%USERPROFILE%\.claude\settings.json`:
+
+  ```json
+  "pluginConfigs": { "b-side@b-side": { "options": { "mascot": "sleepy-fox" } } }
+  ```
+
+Then run `/reload-plugins` and reopen `/soundtrack pane`. To go back to Miso,
+remove `"mascot"` (or set it to `miso`). After editing a mascot's SVG itself,
+reopening the pane is enough. A missing or broken file falls back to Miso.
 
 To draw one by hand instead, [MASCOTS.md](MASCOTS.md) has the full contract:
 the four moods, the CSS variables the pane sets, the rules and a starter
